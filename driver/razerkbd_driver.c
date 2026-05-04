@@ -462,6 +462,17 @@ static int razer_send_payload(struct razer_kbd_device *device, struct razer_repo
     return 0;
 }
 
+static bool razer_is_deathstalker_v2_wireless(struct razer_kbd_device *device)
+{
+    switch (device->usb_pid) {
+    case USB_DEVICE_ID_RAZER_DEATHSTALKER_V2_PRO_WIRELESS:
+    case USB_DEVICE_ID_RAZER_DEATHSTALKER_V2_PRO_TKL_WIRELESS:
+        return true;
+    default:
+        return false;
+    }
+}
+
 /**
  * Reads the physical layout of the keyboard.
  *
@@ -2014,9 +2025,11 @@ static ssize_t razer_attr_write_profile_led_blue(struct device *dev, struct devi
 static ssize_t razer_attr_read_device_serial(struct device *dev, struct device_attribute *attr, char *buf)
 {
     struct razer_kbd_device *device = dev_get_drvdata(dev);
-    char serial_string[51];
+    char serial_string[51] = {0};
     struct razer_report request = {0};
     struct razer_report response = {0};
+    int err;
+    int attempt;
 
     /* For Blade laptops we get the serial number from DMI */
     if (is_blade_laptop(device)) {
@@ -2024,10 +2037,22 @@ static ssize_t razer_attr_read_device_serial(struct device *dev, struct device_a
         goto exit;
     }
 
-    request = razer_chroma_standard_get_serial();
-    request.transaction_id.id = 0xFF;
+    for (attempt = 0; attempt < 5; attempt++) {
+        memset(&request, 0, sizeof(request));
+        memset(&response, 0, sizeof(response));
 
-    razer_send_payload(device, &request, &response);
+        request = razer_chroma_standard_get_serial();
+        request.transaction_id.id = razer_is_deathstalker_v2_wireless(device) ? 0x9F : 0xFF;
+
+        err = razer_send_payload(device, &request, &response);
+        if (err == 0 && response.arguments[0] != 0)
+            break;
+
+        if (!razer_is_deathstalker_v2_wireless(device))
+            break;
+
+        msleep(500);
+    }
 
     strncpy(&serial_string[0], &response.arguments[0], 22);
     serial_string[22] = '\0';
@@ -2046,11 +2071,25 @@ static ssize_t razer_attr_read_firmware_version(struct device *dev, struct devic
     struct razer_kbd_device *device = dev_get_drvdata(dev);
     struct razer_report request = {0};
     struct razer_report response = {0};
+    int err;
+    int attempt;
 
-    request = razer_chroma_standard_get_firmware_version();
-    request.transaction_id.id = 0xFF;
+    for (attempt = 0; attempt < 5; attempt++) {
+        memset(&request, 0, sizeof(request));
+        memset(&response, 0, sizeof(response));
 
-    razer_send_payload(device, &request, &response);
+        request = razer_chroma_standard_get_firmware_version();
+        request.transaction_id.id = razer_is_deathstalker_v2_wireless(device) ? 0x9F : 0xFF;
+
+        err = razer_send_payload(device, &request, &response);
+        if (err == 0 && (response.arguments[0] != 0 || response.arguments[1] != 0))
+            break;
+
+        if (!razer_is_deathstalker_v2_wireless(device))
+            break;
+
+        msleep(500);
+    }
 
     return sprintf(buf, "v%d.%d\n", response.arguments[0], response.arguments[1]);
 }
