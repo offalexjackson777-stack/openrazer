@@ -1496,6 +1496,8 @@ class RazerDeathStalkerV2ProTKLViaHyperFluxV2(_RazerDevice):
                'set_reactive_effect',
                'set_breath_random_effect', 'set_breath_single_effect', 'set_breath_dual_effect',
                'set_starlight_random_effect', 'set_starlight_single_effect', 'set_starlight_dual_effect',
+               'get_game_mode', 'set_game_mode',
+               'get_macro_mode', 'set_macro_mode', 'get_macro_effect', 'set_macro_effect',
                # Battery
                'get_battery', 'is_charging']
     DEVICE_IMAGE = "https://dl.razerzone.com/src/6117/6117-1-en-v1.png"
