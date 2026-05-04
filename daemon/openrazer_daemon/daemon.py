@@ -93,10 +93,10 @@ class RazerDaemon(DBusService):
         # map of vid+pid to counter for serial numbers for unknown devices
         self._unknown_serial_counter: dict[tuple[int, int], int] = {}
 
-        # Check for plugdev group
-        if not self._check_plugdev_group():
-            self.logger.critical("User is not a member of the plugdev group")
-            self.logger.critical("Please run the command 'sudo gpasswd -a $USER plugdev' and then reboot!")
+        # Check for openrazer group
+        if not self._check_openrazer_group():
+            self.logger.critical("User is not a member of the openrazer group")
+            self.logger.critical("Please run the command 'sudo gpasswd -a $USER openrazer' and then reboot!")
             sys.exit(1)
 
         # Setup DBus to use gobject main loop
@@ -185,9 +185,9 @@ class RazerDaemon(DBusService):
 
         return logger
 
-    def _check_plugdev_group(self):
+    def _check_openrazer_group(self):
         """
-        Check if the user is a member of the plugdev group. For the root
+        Check if the user is a member of the openrazer group. For the root
         user, this always returns True
 
         :rtype: bool
@@ -196,7 +196,7 @@ class RazerDaemon(DBusService):
             return True
 
         try:
-            return grp.getgrnam('plugdev').gr_gid in os.getgroups()
+            return grp.getgrnam('openrazer').gr_gid in os.getgroups()
         except KeyError:
             pass
 
@@ -474,6 +474,8 @@ class RazerDaemon(DBusService):
                         double_device = False
                         for alt_device in self._razer_devices:
                             if device_match in alt_device.device_id and alt_device.device_id != sys_name and sys_path in alt_device.dbus.additional_interfaces:
+                                if device_match == '0003:1532:00CF':
+                                    continue
                                 self.logger.warning('BUG: Device %s has already been found with interface %s. Skipping', sys_name, alt_device.device_id)
                                 double_device = True
                         if double_device:
@@ -488,8 +490,8 @@ class RazerDaemon(DBusService):
                     file_group_id = os.stat(test_file).st_gid
                     file_group_name = grp.getgrgid(file_group_id)[0]
 
-                    if os.getgid() != file_group_id and file_group_name != 'plugdev':
-                        self.logger.critical("Could not access {0}/device_type, file is not owned by plugdev".format(sys_path))
+                    if os.getgid() != file_group_id and file_group_name != 'openrazer':
+                        self.logger.critical("Could not access {0}/device_type, file is not owned by openrazer".format(sys_path))
                         break
 
                     razer_device = device_class(device_path=sys_path, device_number=device_number, config=self._config,

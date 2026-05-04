@@ -48,15 +48,19 @@ for GENERIC_DRIVER in "razer" "hid-generic"; do
 		mesg "Unbinding $DEVICE_ID from $GENERIC_DRIVER"
 		printf '%s' "$DEVICE_ID" > /sys/bus/hid/drivers/"$GENERIC_DRIVER"/unbind
 		mesg "Binding $DEVICE_ID to $DRIVER"
-		printf '%s' "$DEVICE_ID" > /sys/bus/hid/drivers/"$DRIVER"/bind
+		if ! printf '%s' "$DEVICE_ID" > /sys/bus/hid/drivers/"$DRIVER"/bind; then
+			mesg "Failed binding $DEVICE_ID to $DRIVER, restoring $GENERIC_DRIVER"
+			printf '%s' "$DEVICE_ID" > /sys/bus/hid/drivers/"$GENERIC_DRIVER"/bind || true
+			exit 1
+		fi
 		sleep 0.1
 		mesg "Finished binding $DEVICE_ID"
 	fi
 done
 
 if [ -d /sys/bus/hid/drivers/"$DRIVER"/"$DEVICE_ID" ] ; then
-	mesg "Changing group /sys/bus/hid/drivers/$DRIVER/$DEVICE_ID/"
-	chgrp -R plugdev /sys/bus/hid/drivers/"$DRIVER"/"$DEVICE_ID"/
-	mesg "Changed group /sys/bus/hid/drivers/$DRIVER/$DEVICE_ID/"
+	DEVICE_PATH=$(readlink -f /sys/bus/hid/drivers/"$DRIVER"/"$DEVICE_ID")
+	mesg "Changing group $DEVICE_PATH/"
+	chgrp -R openrazer "$DEVICE_PATH"/
+	mesg "Changed group $DEVICE_PATH/"
 fi
-
