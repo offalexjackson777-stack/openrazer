@@ -60,7 +60,20 @@ done
 
 if [ -d /sys/bus/hid/drivers/"$DRIVER"/"$DEVICE_ID" ] ; then
 	DEVICE_PATH=$(readlink -f /sys/bus/hid/drivers/"$DRIVER"/"$DEVICE_ID")
-	mesg "Changing group $DEVICE_PATH/"
-	chgrp -R openrazer "$DEVICE_PATH"/
-	mesg "Changed group $DEVICE_PATH/"
+	count=0
+	while [ ! -e "$DEVICE_PATH"/device_type ] && [ "$count" -lt 20 ]; do
+		sleep 0.05
+		count=$((count + 1))
+	done
+	count=0
+	while [ "$count" -lt 20 ]; do
+		mesg "Changing group $DEVICE_PATH/"
+		chgrp -R openrazer "$DEVICE_PATH"/
+		if [ "$(stat -c %G "$DEVICE_PATH"/device_type 2>/dev/null)" = "openrazer" ]; then
+			mesg "Changed group $DEVICE_PATH/"
+			break
+		fi
+		sleep 0.05
+		count=$((count + 1))
+	done
 fi
