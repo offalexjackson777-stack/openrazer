@@ -1752,6 +1752,10 @@ class RazerBasiliskV3Pro35KViaHyperFluxV2(RazerBasiliskV3Pro35KWireless):
 
     USB_PID = 0x00CF
     EVENT_FILE_REGEX = None
+    METHODS = ['get_hyperflux_battery' if method == 'get_battery'
+               else 'is_hyperflux_charging' if method == 'is_charging'
+               else method
+               for method in RazerBasiliskV3Pro35KWireless.METHODS]
 
     @classmethod
     def match(cls, device_id, dev_path):

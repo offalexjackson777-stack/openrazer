@@ -36,6 +36,32 @@ def is_charging(self):
         return bool(int(driver_file.read().strip()))
 
 
+@endpoint('razer.device.power', 'getBattery', out_sig='d')
+def get_hyperflux_battery(self):
+    """
+    Get HyperFlux receiver mouse battery level.
+    """
+    self.logger.debug("DBus call get_hyperflux_battery")
+
+    try:
+        return get_battery(self)
+    except OSError:
+        return -1.0
+
+
+@endpoint('razer.device.power', 'isCharging', out_sig='b')
+def is_hyperflux_charging(self):
+    """
+    Get HyperFlux receiver mouse charging status.
+    """
+    self.logger.debug("DBus call is_hyperflux_charging")
+
+    try:
+        return is_charging(self)
+    except OSError:
+        return False
+
+
 @endpoint('razer.device.power', 'setIdleTime', in_sig='q')
 def set_idle_time(self, idle_time):
     """

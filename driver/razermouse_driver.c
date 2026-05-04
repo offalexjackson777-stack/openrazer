@@ -6105,6 +6105,12 @@ static int razer_mouse_probe(struct hid_device *hdev, const struct hid_device_id
     // Init data
     razer_mouse_init(dev, intf, hdev);
 
+    if (dev->usb_pid == USB_DEVICE_ID_RAZER_BASILISK_V3_PRO_35K_VIA_HYPERFLUX_V2
+        && intf->cur_altsetting->desc.bInterfaceNumber != 4) {
+        kfree(dev);
+        return -ENODEV;
+    }
+
     switch(dev->usb_pid) {
     case USB_DEVICE_ID_RAZER_DEATHADDER_V2:
     case USB_DEVICE_ID_RAZER_DEATHADDER_V2_PRO_WIRED:
